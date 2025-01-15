@@ -57,6 +57,7 @@ class TodoResponse(Todo):
     id: int  # TODOのID
 
 
+
 # クライアント用のHTMLを返すエンドポイント
 @app.get("/", response_class=HTMLResponse)
 def read_root():
@@ -91,8 +92,7 @@ def get_todos():
 def get_todo(todo_id: int):
     with sqlite3.connect("todos.db") as conn:
         # 指定されたIDのTODOを検索
-        todo = conn.execute(
-            "SELECT * FROM todos WHERE id = ?", (todo_id,)).fetchone()
+        todo = conn.execute("SELECT * FROM todos WHERE id = ?", (todo_id,)).fetchone()
         if not todo:  # TODOが見つからない場合は404エラーを返す
             raise HTTPException(status_code=404, detail="Todo not found")
         return {"id": todo[0], "title": todo[1], "completed": bool(todo[2])}
@@ -121,6 +121,8 @@ def delete_todo(todo_id: int):
         if cursor.rowcount == 0:  # 削除対象のTODOが存在しない場合は404エラーを返す
             raise HTTPException(status_code=404, detail="Todo not found")
         return {"message": "Todo deleted"}
+
+
 
 
 if __name__ == "__main__":
