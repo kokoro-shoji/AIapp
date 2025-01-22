@@ -2,88 +2,269 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <!-- ビューポートの設定：モバイルデバイスでの表示を最適化 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>家計簿</title>
     <style>
-        /* フォームの上下に余白を追加 */
-        .todo-form {
-            margin: 1rem 0;
+        /* 全体のスタイル */
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
         }
-        /* 完了したTODOのスタイル：取り消し線と薄い色 */
-        .completed {
-            text-decoration: line-through;
-            color: gray;
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        /* フォームのスタイル */
+        #entryForm {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        input {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        #amountInput {
+            width: 150px;
+        }
+
+        #memoInput {
+            width: 300px;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        /* エントリーリストのスタイル */
+        .entry-item {
+            background-color: white;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        .entry-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .amount {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .income {
+            color: #000000;
+        }
+
+        .expense {
+            color: #d64838;
+        }
+
+        .memo-text {
+            margin-left: 15px;
+            color: #666;
+        }
+
+        .entry-date {
+            font-size: 0.8em;
+            color: #95a5a6;
+            margin: 5px 0;
+        }
+
+        /* 操作ボタン */
+        .entry-buttons {
+            margin-top: 10px;
+        }
+
+        .edit-button {
+            background-color: #db8d10;
+            margin-right: 5px;
+        }
+
+        .delete-button {
+            background-color: #bd3d2f;
+        }
+
+        /* 合計表示 */
+        .total-container {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            text-align: center;
+            font-size: 1.2em;
+        }
+
+        #totalSum {
+            font-weight: bold;
+            color: #2c3e50;
         }
     </style>
 </head>
 <body>
     <h1>家計簿</h1>
-    
-    <!-- TODOを追加するためのフォーム -->
-    <form id="numberForm" class="todo-form">
-        <input type="number" id="numberInput" placeholder="収支を入力..." required>
+
+    <form id="entryForm">
+        <input type="number" id="amountInput" placeholder="収支を入力" required>
+        <input type="text" id="memoInput" placeholder="メモを入力">
         <button type="submit">追加</button>
     </form>
 
-    <!-- TODOリストを表示する場所 -->
-    <ul id="numberList"></ul>
+    <div id="entryList"></div>
 
-    <!-- 合計を表示させる-->
-     <p>total : <span id="totalSum">0</span></p>
+    <div class="total-container">
+        <p>合計: <span id="totalSum">0</span>円</p>
+    </div>
 
     <script>
-
-        // 数字のリストを保存する配列
-        let numbers = [];
-         /**
-         * 数字をリストに追加して表示
-         * @param {number} number - 追加する数字
+        // 収支とメモを保存する配列
+        let entries = [];
+    
+        /**
+         * 収支とメモを追加
          */
-         function addNumber(number) {
-            // 配列に数字を追加
-            numbers.push(number);
-
-            // 数字リストを更新して表示
-            const listElement = document.getElementById('numberList');
-            listElement.innerHTML = numbers
-                .map(num => `<li>${num}</li>`)
-                .join('');
-
-            // 合計を再計算して表示
+        function addEntry(amount, memo) {
+            const entry = {
+                id: Date.now(),
+                amount: amount,
+                memo: memo,
+                date: new Date().toLocaleString()
+            };
+    
+            entries.push(entry);
+            renderEntries();
             updateTotalSum();
         }
+    
+        /**
+         * エントリーを削除
+         */
+        function deleteEntry(id) {
+            entries = entries.filter(entry => entry.id !== id);
+            renderEntries();
+            updateTotalSum();
+        }
+    
+        /**
+         * エントリーを編集
+         */
+        function editEntry(id) {
+            const entry = entries.find(e => e.id === id);
+            if (entry) {
+                const newAmount = prompt('金額を編集:', entry.amount);
+                const newMemo = prompt('メモを編集:', entry.memo);
+    
+                if (newAmount !== null && !isNaN(newAmount)) {
+                    entry.amount = parseFloat(newAmount);
+                    entry.memo = newMemo || '';
+                    entry.date = new Date().toLocaleString() + ' (編集済み)';
+                    renderEntries();
+                    updateTotalSum();
+                }
+            }
+        }
+    
+        /**
+         * エントリーを画面に表示
+         */
+        // JavaScriptの部分は同じですが、renderEntries関数のHTML生成部分を少し修正します
+        function renderEntries() {
+            const entryList = document.getElementById('entryList');
+            entryList.innerHTML = '';
 
+            entries.forEach(entry => {
+                const div = document.createElement('div');
+                div.className = 'entry-item';
+
+                div.innerHTML = `
+                    <div>
+                        <span class="amount ${entry.amount >= 0 ? 'income' : 'expense'}">
+                            ${entry.amount >= 0 ? '+' : ''}${entry.amount}円
+                        </span>
+                        <span class="memo-text">${entry.memo}</span>
+                    </div>
+                    <div class="entry-date">${entry.date}</div>
+                    <div class="entry-buttons">
+                        <button class="edit-button" onclick="editEntry(${entry.id})">編集</button>
+                        <button class="delete-button" onclick="deleteEntry(${entry.id})">削除</button>
+                    </div>
+                `;
+
+                entryList.appendChild(div);
+            });
+        }
+
+    
         /**
          * 合計を計算して表示
          */
         function updateTotalSum() {
-            // 配列内のすべての数字を合計
-            const total = numbers.reduce((sum, num) => sum + num, 0);
-
-            // 合計を表示
+            const total = entries.reduce((sum, entry) => sum + entry.amount, 0);
             document.getElementById('totalSum').textContent = total;
         }
-
+    
         // フォームの送信イベントを処理
-        document.getElementById('numberForm').addEventListener('submit', e => {
+        document.getElementById('entryForm').addEventListener('submit', e => {
             e.preventDefault();
-
-            // 入力された数字を取得
-            const input = document.getElementById('numberInput');
-            const number = parseFloat(input.value);
-
-            // 数字が有効な場合のみ処理
-            if (!isNaN(number)) {
-                addNumber(number);
-
+    
+            const amountInput = document.getElementById('amountInput');
+            const memoInput = document.getElementById('memoInput');
+    
+            const amount = parseFloat(amountInput.value);
+            const memo = memoInput.value.trim();
+    
+            if (!isNaN(amount)) {
+                addEntry(amount, memo);
+    
                 // 入力フィールドをクリア
-                input.value = '';
+                amountInput.value = '';
+                memoInput.value = '';
             }
         });
-
- 
-
+    
+        // LocalStorage関連の機能を追加する場合
+        function saveToLocalStorage() {
+            localStorage.setItem('entries', JSON.stringify(entries));
+        }
+    
+        function loadFromLocalStorage() {
+            const savedEntries = localStorage.getItem('entries');
+            if (savedEntries) {
+                entries = JSON.parse(savedEntries);
+                renderEntries();
+                updateTotalSum();
+            }
+        }
+    
+        // ページ読み込み時に保存データを読み込む
+        window.onload = loadFromLocalStorage;
     </script>
 </body>
 </html>
